@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NADMO Chatbot & Analytics</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.css">
+    <style>
+        :root {
+            --primary-color: #007bff;
+            --secondary-color: #00bfff;
+            --dark-color: #343a40;
+            --light-color: #f8f9fa;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --success-color: #28a745;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa, #e4e8eb);
+            color: #333;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 15px 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .logo {
+            height: 50px;
+            margin-right: 15px;
+        }
+        
+        .main-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            margin: 30px auto;
+            max-width: 1200px;
+        }
+        
+        .nav-tabs .nav-link {
+            font-weight: 600;
+            color: var(--dark-color);
+            border: none;
+            padding: 15px 25px;
+        }
+        
+        .nav-tabs .nav-link.active {
+            color: var(--primary-color);
+            background-color: transparent;
+            border-bottom: 3px solid var(--primary-color);
+        }
+        
+        .tab-content {
+            padding: 25px;
+        }
+        
+        /* Chat Container */
+        .chat-container {
+            height: 600px;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+        
+        .welcome-message {
+            text-align: center;
+            padding: 15px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+        .chat-box {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f9f9f9;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .message {
+            display: flex;
+            margin-bottom: 15px;
+            animation: slideIn 0.3s ease-in-out;
+        }
+        
+        .message.user {
+            justify-content: flex-end;
+        }
+        
+        .message.bot {
+            justify-content: flex-start;
+        }
+        
+        .message-content {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            position: relative;
+            word-wrap: break-word;
+            line-height: 1.4;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .user .message-content {
+            background: var(--primary-color);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .bot .message-content {
+            background: #e9ecef;
+            color: #333;
+            border-bottom-left-radius: 4px;
+        }
+        
+        .input-box {
+            display: flex;
+            padding: 15px;
+            background: white;
+            border-top: 1px solid #eee;
+        }
+        
+        .input-box input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        
+        .input-box input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+        }
+        
+        .input-box button {
+            padding: 12px 20px;
+            margin-left: 10px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .input-box button:hover {
+            background: #0056b3;
+            transform: translateY(-1px);
+        }
+        
+        /* Analytics Dashboard */
+        .dashboard-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            margin-bottom: 20px;
+            height: 100%;
+        }
+        
+        .dashboard-card h3 {
+            color: var(--primary-color);
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .stat-card .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        .report-item {
+            border-left: 4px solid var(--primary-color);
+            padding: 10px 15px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        
+        .report-item .location {
+            font-weight: bold;
+            color: var(--dark-color);
+        }
+        
+        .report-item .sentiment {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .sentiment-positive {
+            background-color: rgba(40, 167, 69, 0.1);
+            color: var(--success-color);
+        }
+        
+        .sentiment-negative {
+            background-color: rgba(220, 53, 69, 0.1);
+            color: var(--danger-color);
+        }
+        
+        .sentiment-neutral {
+            background-color: rgba(108, 117, 125, 0.1);
+            color: #6c757d;
+        }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Loading indicator */
+        .typing-indicator {
+            display: inline-block;
+            padding: 10px 15px;
+            background: #e9ecef;
+            border-radius: 18px;
+            color: #333;
+        }
+        
+        .typing-indicator span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #666;
+            border-radius: 50%;
+            margin: 0 2px;
+            animation: bounce 1.5s infinite ease-in-out;
+        }
+        
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes bounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-5px); }
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .main-container {
+                margin: 15px;
+            }
+            
+            .nav-tabs .nav-link {
+                padding: 10px 15px;
+                font-size: 0.9rem;
+            }
+            
+            .chat-container {
+                height: 500px;
+            }
+            
+            .message-content {
+                max-width: 85%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="d-flex align-items-center">
+                <img src="https://nadmo.gov.gh/wp-content/uploads/2021/03/cropped-NADMO-LOGO-32x32.png" alt="NADMO Logo" class="logo">
+                <h1 class="mb-0">NADMO Emergency Response System</h1>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container main-container">
+        <!-- Navigation Tabs -->
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="chat-tab" data-bs-toggle="tab" data-bs-target="#chat" type="button" role="tab" aria-controls="chat" aria-selected="true">
+                    <i class="fas fa-comments me-2"></i>Emergency Chatbot
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="analytics-tab" data-bs-toggle="tab" data-bs-target="#analytics" type="button" role="tab" aria-controls="analytics" aria-selected="false">
+                    <i class="fas fa-chart-bar me-2"></i>Incident Analytics
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="reports-tab" data-bs-toggle="tab" data-bs-target="#reports" type="button" role="tab" aria-controls="reports" aria-selected="false">
+                    <i class="fas fa-database me-2"></i>Incident Reports
+                </button>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content" id="myTabContent">
+            <!-- Chat Tab -->
+            <div class="tab-pane fade show active" id="chat" role="tabpanel" aria-labelledby="chat-tab">
+                <div class="chat-container">
+                    <!-- Welcome Message -->
+                    <div class="welcome-message">
+                        Welcome to NADMO Ghana Emergency Response. How can we help you today? 😊
+                    </div>
+
+                    <!-- Chat Box -->
+                    <div class="chat-box" id="chat-box">
+                        <!-- Chat messages will appear here -->
+                    </div>
+
+                    <!-- Input Box -->
+                    <div class="input-box">
+                        <input type="text" id="user-input" placeholder="Type your message here..." onkeydown="handleKeyDown(event)">
+                        <button onclick="sendMessage()">Send</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics Tab -->
+            <div class="tab-pane fade" id="analytics" role="tabpanel" aria-labelledby="analytics-tab">
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-value" id="total-reports">0</div>
+                            <div class="stat-label">Total Incidents</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-value" id="today-reports">0</div>
+                            <div class="stat-label">Today's Incidents</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-value" id="positive-sentiment">0%</div>
+                            <div class="stat-label">Positive Sentiment</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-value" id="common-disaster">-</div>
+                            <div class="stat-label">Most Common Disaster</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="dashboard-card">
+                            <h3>Incidents by Type</h3>
+                            <canvas id="incidentTypeChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="dashboard-card">
+                            <h3>Incidents by Location</h3>
+                            <canvas id="incidentLocationChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <div class="dashboard-card">
+                            <h3>Incidents Over Time</h3>
+                            <canvas id="incidentTimelineChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reports Tab -->
+            <div class="tab-pane fade" id="reports" role="tabpanel" aria-labelledby="reports-tab">
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <input type="text" id="report-search" class="form-control" placeholder="Search reports...">
+                            <button class="btn btn-primary" onclick="searchReports()">Search</button>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <select id="location-filter" class="form-select" onchange="filterReports()">
+                            <option value="">All Locations</option>
+                            <!-- Locations will be populated by JavaScript -->
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select id="sentiment-filter" class="form-select" onchange="filterReports()">
+                            <option value="">All Sentiments</option>
+                            <option value="positive">Positive</option>
+                            <option value="neutral">Neutral</option>
+                            <option value="negative">Negative</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="dashboard-card">
+                    <h3>Recent Incident Reports</h3>
+                    <div id="reports-list">
+                        <!-- Reports will be loaded here -->
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4 mt-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>NADMO Emergency Response System</h5>
+                    <p>Providing timely disaster management and emergency response services to Ghanaians.</p>
+                </div>
+                <div class="col-md-3">
+                    <h5>Quick Links</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="https://nadmo.gov.gh" class="text-white">NADMO Website</a></li>
+                        <li><a href="#" class="text-white">Emergency Numbers</a></li>
+                        <li><a href="#" class="text-white">Disaster Preparedness</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h5>Contact</h5>
+                    <ul class="list-unstyled">
+                        <li>Emergency: 0256 546 480</li>
+                        <li>Email: info@nadmo.gov.gh</li>
+                        <li>HQ: Haatso, Accra</li>
+                    </ul>
+                </div>
+            </div>
+            <hr>
+            <div class="text-center">
+                <small>© 2023 NADMO Ghana. All rights reserved.</small>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <script>
+        // DOM elements
+        const chatBox = document.getElementById("chat-box");
+        const userInput = document.getElementById("user-input");
+        
+        // Charts
+        let typeChart, locationChart, timelineChart;
+        
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            userInput.focus();
+            loadAnalyticsData();
+            loadReports();
+            
+            // Set up event listeners for tab changes
+            const tabEls = document.querySelectorAll('button[data-bs-toggle="tab"]');
+            tabEls.forEach(tabEl => {
+                tabEl.addEventListener('shown.bs.tab', function(event) {
+                    if (event.target.id === 'analytics-tab') {
+                        loadAnalyticsData();
+                    } else if (event.target.id === 'reports-tab') {
+                        loadReports();
+                    }
+                });
+            });
+        });
+        
+        // Show typing indicator
+        function showTypingIndicator() {
+            const indicator = document.createElement("div");
+            indicator.classList.add("message", "bot");
+            indicator.innerHTML = `
+                <div class="message-content typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            `;
+            chatBox.appendChild(indicator);
+            chatBox.scrollTop = chatBox.scrollHeight;
+            return indicator;
+        }
+        
+        // Remove typing indicator
+        function removeTypingIndicator(indicator) {
+            if (indicator && indicator.parentNode) {
+                indicator.remove();
+            }
+        }
+        
+        // Append message to chat
+        function appendMessage(sender, message) {
+            const msgDiv = document.createElement("div");
+            msgDiv.classList.add("message", sender);
+            
+            const msgContent = document.createElement("div");
+            msgContent.classList.add("message-content");
+            
+            // Preserve line breaks in the message
+            msgContent.innerHTML = message.replace(/\n/g, '<br>');
+            
+            msgDiv.appendChild(msgContent);
+            chatBox.appendChild(msgDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+        
+        // Handle sending messages
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+            
+            userInput.value = "";
+            appendMessage("user", message);
+            
+            // Show typing indicator
+            const typingIndicator = showTypingIndicator();
+            
+            try {
+                const response = await fetch("http://localhost:5000/chatbot", {
+                    method: "POST",
+                    headers: { 
+                        "Content-Type": "application/json",
+                        "Accept": "application/json"
+                    },
+                    body: JSON.stringify({ message })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                removeTypingIndicator(typingIndicator);
+                appendMessage("bot", data.reply);
+            } catch (error) {
+                removeTypingIndicator(typingIndicator);
+                console.error("Error:", error);
+                appendMessage("bot", "Sorry, I'm having trouble connecting to the server. Please try again later.");
+            }
+        }
+        
+        // Handle Enter key
+        function handleKeyDown(event) {
+            if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+        
+        // Load analytics data
+        async function loadAnalyticsData() {
+            try {
+                const response = await fetch("http://localhost:5000/analytics");
+                if (!response.ok) throw new Error("Failed to fetch analytics");
+                
+                const data = await response.json();
+                
+                // Update stats
+                document.getElementById('total-reports').textContent = data.total_reports;
+                document.getElementById('today-reports').textContent = data.today_reports;
+                document.getElementById('positive-sentiment').textContent = data.positive_sentiment + '%';
+                document.getElementById('common-disaster').textContent = data.most_common_disaster || '-';
+                
+                // Create or update charts
+                createIncidentTypeChart(data.incident_types);
+                createIncidentLocationChart(data.top_locations);
+                createIncidentTimelineChart(data.incidents_by_date);
+                
+            } catch (error) {
+                console.error("Error loading analytics:", error);
+            }
+        }
+        
+        // Create incident type chart
+        function createIncidentTypeChart(data) {
+            const ctx = document.getElementById('incidentTypeChart').getContext('2d');
+            const labels = data.map(item => item.type);
+            const values = data.map(item => item.count);
+            
+            if (typeChart) {
+                typeChart.destroy();
+            }
+            
+            typeChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: [
+                            '#FF6384',
+                            '#36A2EB',
+                            '#FFCE56',
+                            '#4BC0C0',
+                            '#9966FF',
+                            '#FF9F40'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Create incident location chart
+        function createIncidentLocationChart(data) {
+            const ctx = document.getElementById('incidentLocationChart').getContext('2d');
+            const labels = data.map(item => item.location);
+            const values = data.map(item => item.count);
+            
+            if (locationChart) {
+                locationChart.destroy();
+            }
+            
+            locationChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Incidents',
+                        data: values,
+                        backgroundColor: '#36A2EB',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Create incident timeline chart
+        function createIncidentTimelineChart(data) {
+            const ctx = document.getElementById('incidentTimelineChart').getContext('2d');
+            const labels = data.map(item => item.date);
+            const values = data.map(item => item.count);
+            
+            if (timelineChart) {
+                timelineChart.destroy();
+            }
+            
+            timelineChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Incidents',
+                        data: values,
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 2,
+                        tension: 0.1,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Load reports
+        async function loadReports() {
+            try {
+                const response = await fetch("http://localhost:5000/reports");
+                if (!response.ok) throw new Error("Failed to fetch reports");
+                
+                const data = await response.json();
+                displayReports(data.reports);
+                
+                // Populate location filter
+                const locations = [...new Set(data.reports.map(r => r.location))].filter(l => l && l !== 'Unknown Location');
+                const locationFilter = document.getElementById('location-filter');
+                locations.forEach(location => {
+                    const option = document.createElement('option');
+                    option.value = location;
+                    option.textContent = location;
+                    locationFilter.appendChild(option);
+                });
+                
+            } catch (error) {
+                console.error("Error loading reports:", error);
+                document.getElementById('reports-list').innerHTML = `
+                    <div class="alert alert-danger">
+                        Failed to load reports. Please try again later.
+                    </div>
+                `;
+            }
+        }
+        
+        // Display reports
+        function displayReports(reports) {
+            const container = document.getElementById('reports-list');
+            
+            if (!reports || reports.length === 0) {
+                container.innerHTML = '<div class="alert alert-info">No incident reports found.</div>';
+                return;
+            }
+            
+            let html = '';
+            reports.forEach(report => {
+                // Simple sentiment analysis (would be better done server-side with NLP)
+                const sentiment = analyzeSentiment(report.incident);
+                
+                html += `
+                    <div class="report-item">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="location">${report.location || 'Unknown Location'}</span>
+                            <small class="text-muted">${report.date} ${report.time}</small>
+                        </div>
+                        <p>${report.incident}</p>
+                        <div class="d-flex justify-content-between">
+                            <small>Reported by: ${report.name || 'Anonymous'}</small>
+                            <span class="sentiment sentiment-${sentiment}">${sentiment}</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+        
+        // Simple client-side sentiment analysis (for demo purposes)
+        function analyzeSentiment(text) {
+            const positiveWords = ['help', 'saved', 'safe', 'thanks', 'appreciate', 'quick', 'good'];
+            const negativeWords = ['emergency', 'danger', 'fire', 'flood', 'collapsed', 'accident', 'urgent', 'help'];
+            
+            const lowerText = text.toLowerCase();
+            let positiveCount = 0;
+            let negativeCount = 0;
+            
+            positiveWords.forEach(word => {
+                if (lowerText.includes(word)) positiveCount++;
+            });
+            
+            negativeWords.forEach(word => {
+                if (lowerText.includes(word)) negativeCount++;
+            });
+            
+            if (positiveCount > negativeCount) return 'positive';
+            if (negativeCount > positiveCount) return 'negative';
+            return 'neutral';
+        }
+        
+        // Filter reports
+        function filterReports() {
+            const locationFilter = document.getElementById('location-filter').value;
+            const sentimentFilter = document.getElementById('sentiment-filter').value;
+            const searchTerm = document.getElementById('report-search').value.toLowerCase();
+            
+            const reportItems = document.querySelectorAll('.report-item');
+            reportItems.forEach(item => {
+                const location = item.querySelector('.location').textContent;
+                const sentiment = item.querySelector('.sentiment').textContent;
+                const text = item.querySelector('p').textContent.toLowerCase();
+                
+                const locationMatch = !locationFilter || location === locationFilter;
+                const sentimentMatch = !sentimentFilter || sentiment === sentimentFilter;
+                const searchMatch = !searchTerm || text.includes(searchTerm) || location.toLowerCase().includes(searchTerm);
+                
+                if (locationMatch && sentimentMatch && searchMatch) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+        
+        // Search reports
+        function searchReports() {
+            filterReports();
+        }
+    </script>
+</body>
+</html>
